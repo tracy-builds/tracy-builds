@@ -118,7 +118,7 @@ def modify_job(job_config, tracy_tag, file):
             # add glfw dependency for -DLEGACY=1 builds
             if file == "linux.yml":
                 if "pacman" in step["run"]:
-                    step["run"] = step["run"].replace("cmake", "cmake glfw")
+                    step["run"] = step["run"].replace("cmake", "cmake glfw musl")
 
             # inject matrix args into meson and cmake
             if "meson" in step["run"]:
@@ -143,6 +143,11 @@ def modify_job(job_config, tracy_tag, file):
 
     # use new, cleaned, steps
     job_config["steps"] = steps
+    if file == "linux.yml":
+        # set CC env var for musl
+        if "env" not in job_config:
+            job_config["env"] = {}
+        job_config["env"]["CC"] = "${{ matrix.build_flags.cc }}"
 
     # add build_flags matrix
     if "strategy" not in job_config:
@@ -152,7 +157,7 @@ def modify_job(job_config, tracy_tag, file):
         job_config["strategy"]["matrix"] = {}
 
     job_config["strategy"]["matrix"]["build_flags"] = [
-        {"cmake": "-DTRACY_LTO=ON", "meson": "", "postfix": ""},
+        # TESTING {"cmake": "-DTRACY_LTO=ON", "meson": "", "cc": "", "postfix": ""},
         # TODO: likely broken
         # {
         #     "cmake": "-DTRACY_ON_DEMAND=ON -DTRACY_LTO=ON",
@@ -162,11 +167,20 @@ def modify_job(job_config, tracy_tag, file):
     ]
 
     if file == "linux.yml":
+        # TESTING job_config["strategy"]["matrix"]["build_flags"].append(
+        #     {
+        #         "cmake": "-DLEGACY=ON -DTRACY_LTO=ON",
+        #         "meson": "",
+        #         "cc": "",
+        #         "postfix": "-x11",
+        #     }
+        # )
         job_config["strategy"]["matrix"]["build_flags"].append(
             {
-                "cmake": "-DLEGACY=ON -DTRACY_LTO=ON",
+                "cmake": "-DTRACY_LTO=ON",
                 "meson": "",
-                "postfix": "-x11",
+                "cc": "musl-gcc -static -Os",
+                "postfix": "-musl",
             }
         )
 
@@ -183,7 +197,7 @@ def generate_combined_workflow(workflows, tracy_tag):
     }
 
     # Process build.yml (Windows/macOS)
-    if "build.yml" in workflows:
+    if "build.yml" in workflows and False: # TESTING
         print("Processing build.yml...")
         with open(workflows["build.yml"], "r") as f:
             build_wf = yaml.safe_load(f)
