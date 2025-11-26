@@ -97,7 +97,7 @@ def modify_job(job_config, tracy_tag, job_name):
             {
                 "uses": "jirutka/setup-alpine@v1",
                 "with": {
-                    "packages": "build-base freetype wayland dbus libxkbcommon mesa-egl glfw meson cmake git wayland-protocols nodejs"
+                    "packages": "build-base freetype wayland wayland-dev dbus dbus-dev libxkbcommon mesa-egl glfw meson cmake git wayland-protocols nodejs"
                 }
             }
         ]
