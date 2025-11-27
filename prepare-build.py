@@ -134,6 +134,8 @@ def modify_job(job_config, tracy_tag, file):
 
             # inject matrix args into meson and cmake
             if "meson" in step["run"]:
+                if file == "legacy.yml":
+                    continue
                 step["run"] = step["run"].replace(
                     "meson setup -D", "meson setup ${{ matrix.build_flags.meson }} -D"
                 )
