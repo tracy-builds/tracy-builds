@@ -19,6 +19,7 @@ Examples:
     python prepare-build.py v0.11.0 --no-push
 """
 
+from copy import deepcopy
 import sys
 import subprocess
 import yaml
@@ -90,13 +91,13 @@ def modify_job(job_config, tracy_tag, file):
     if "steps" not in job_config:
         return
     
-    if file == "linux.yml":
+    if file == "legacy.yml":
         del job_config["container"]
         job_config["runs-on"] = "ubuntu-22.04"
         steps = [
             {
                 "name": "install packages",
-                "run": "sudo apt-get update && sudo apt-get install -y games-c++-dev libglfw3-dev libxkbcommon-dev libxkbcommon-x11-dev libglvnd-dev dbus wayland-protocols waylandpp-dev libfreetype-dev cmake meson git nodejs"}
+                "run": "sudo apt-get update && sudo apt-get install -y games-c++-dev libglfw3-dev libxkbcommon-dev libxkbcommon-x11-dev libglvnd-dev dbus libfreetype-dev cmake meson git nodejs"}
         ]
     else:
         steps = []
@@ -115,8 +116,10 @@ def modify_job(job_config, tracy_tag, file):
                     step["with"]["name"] = (
                         "${{ matrix.os }}${{ matrix.build_flags.postfix }}"
                     )
-                else:
+                elif file == "linux.yml":
                     step["with"]["name"] = "arch-linux${{ matrix.build_flags.postfix }}"
+                else:
+                    step["with"]["name"] = "ubuntu-linux${{ matrix.build_flags.postfix }}"
 
         if "run" in step:
             # tracy uses ${{ github.sha }} to pass git ref to cmake
@@ -124,11 +127,10 @@ def modify_job(job_config, tracy_tag, file):
             if "${{ github.sha }}" in step["run"]:
                 step["run"] = step["run"].replace("${{ github.sha }}", f'"{tracy_tag}"')
 
-            # add glfw dependency for -DLEGACY=1 builds
-            if file == "linux.yml":
-                if "pacman" in step["run"]:
+            if "pacman" in step["run"]:
+                if file == "legacy.yml":
+                    # step["run"] = step["run"].replace("cmake", "cmake glfw")
                     continue
-                    #step["run"] = step["run"].replace("cmake", "cmake glfw")
 
             # inject matrix args into meson and cmake
             if "meson" in step["run"]:
@@ -163,15 +165,11 @@ def modify_job(job_config, tracy_tag, file):
 
     job_config["strategy"]["matrix"]["build_flags"] = [
         {"cmake": "-DTRACY_LTO=ON", "meson": "", "postfix": ""},
-        # TODO: likely broken
-        # {
-        #     "cmake": "-DTRACY_ON_DEMAND=ON -DTRACY_LTO=ON",
-        #     "meson": "-Dtracy:on_demand=true",
-        #     "postfix": "-ondemand",
-        # },
     ]
+    if file == "legacy.yml":
+        job_config["strategy"]["matrix"]["build_flags"] = []
 
-    if file == "linux.yml":
+    if file == "legacy.yml":
         job_config["strategy"]["matrix"]["build_flags"].append(
             {
                 "cmake": "-DLEGACY=ON -DTRACY_LTO=ON",
@@ -215,16 +213,29 @@ def generate_combined_workflow(workflows, tracy_tag):
             linux_wf = yaml.safe_load(f)
 
         if "jobs" in linux_wf:
-            for job_name, job_config in linux_wf["jobs"].items():
-                print(f"  Adding job: tracy-linux-{job_name}")
-                modify_job(job_config, tracy_tag, "linux.yml")
-                combined["jobs"][f"tracy-linux-{job_name}"] = job_config
-                if "env" in linux_wf:
-                    if "env" not in combined["jobs"][f"tracy-linux-{job_name}"]:
-                        combined["jobs"][f"tracy-linux-{job_name}"]["env"] = {}
-                    combined["jobs"][f"tracy-linux-{job_name}"]["env"].update(
-                        linux_wf["env"]
-                    )
+            if False:
+                arch_wf = deepcopy(linux_wf)
+                job = f"tracy-linux-{job_name}"
+                for job_name, job_config in arch_wf["jobs"].items():
+                    print(f"  Adding job: {job}")
+                    modify_job(job_config, tracy_tag, "linux.yml")
+                    combined["jobs"][job] = job_config
+                    if "env" in arch_wf:
+                        if "env" not in combined["jobs"][job]:
+                            combined["jobs"][job]["env"] = {}
+                        combined["jobs"][job]["env"].update(arch_wf["env"])
+
+            legacy_wf = deepcopy(linux_wf)
+            job = f"tracy-linux-legacy-{job_name}"
+            for job_name, job_config in legacy_wf["jobs"].items():
+                print(f"  Adding job: {job}")
+                modify_job(job_config, tracy_tag, "legacy.yml")
+                combined["jobs"][job] = job_config
+                if "env" in legacy_wf:
+                    if "env" not in combined["jobs"][job]:
+                        combined["jobs"][job]["env"] = {}
+                    combined["jobs"][job]["env"].update(legacy_wf["env"])
+
 
     # Add release job
     print("Adding release job...")

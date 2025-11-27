@@ -13,7 +13,7 @@ create-release:
     run: ls -R artifacts/
   - name: Package all artifacts
     run: |-
-      STRIP_KEYWORDS=("latest" "15" "arch")
+      STRIP_KEYWORDS=("latest" "15" "arch" "legacy")
       cd artifacts
       for dir in */; do
         dirname="${dir%/}"
