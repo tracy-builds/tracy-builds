@@ -89,8 +89,16 @@ def modify_job(job_config, tracy_tag, file):
     """Modify jobs."""
     if "steps" not in job_config:
         return
-
-    steps = []
+    
+    if file == "linux.yml":
+        job_config["container"] = "debian:oldoldstable"
+        steps = [
+            {
+                "name": "isntall packages",
+                "run": "apt-get update && apt-get instal -y games-c++-dev libglfw3-dev libxkbcommon-dev libxkbcommon-x11-dev libglvnd-dev dbus wayland-protocols waylandpp-dev libfreetype-dev cmake meson git nodejs"}
+        ]
+    else:
+        steps = []
     for step in job_config["steps"]:
         if "uses" in step:
             # point checkout at tracy repo and tag
@@ -118,7 +126,8 @@ def modify_job(job_config, tracy_tag, file):
             # add glfw dependency for -DLEGACY=1 builds
             if file == "linux.yml":
                 if "pacman" in step["run"]:
-                    step["run"] = step["run"].replace("cmake", "cmake glfw")
+                    continue
+                    #step["run"] = step["run"].replace("cmake", "cmake glfw")
 
             # inject matrix args into meson and cmake
             if "meson" in step["run"]:
@@ -183,7 +192,7 @@ def generate_combined_workflow(workflows, tracy_tag):
     }
 
     # Process build.yml (Windows/macOS)
-    if "build.yml" in workflows:
+    if "build.yml" in workflows and False:
         print("Processing build.yml...")
         with open(workflows["build.yml"], "r") as f:
             build_wf = yaml.safe_load(f)
