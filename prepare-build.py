@@ -91,7 +91,8 @@ def modify_job(job_config, tracy_tag, file):
         return
     
     if file == "linux.yml":
-        job_config["container"] = "debian:oldoldstable"
+        del job_config["container"]
+        job_config["runs-on"] = "ubuntu-22.04"
         steps = [
             {
                 "name": "install packages",
