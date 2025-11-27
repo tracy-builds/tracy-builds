@@ -121,7 +121,7 @@ def modify_job(job_config, tracy_tag, job_name):
                     {
                         "name": "apply patch",
                         "run": """set -e
-for patch in "tracy-builds/patches/*.patch; do
+for patch in tracy-builds/patches/*.patch; do
     if [ -f "$patch" ]; then
         echo "Checking patch: $patch"
 
