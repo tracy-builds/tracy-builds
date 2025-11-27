@@ -122,6 +122,8 @@ def modify_job(job_config, tracy_tag, job_name):
                     step["with"]["name"] = ("arch" if job_name == "linux" else "alpine") +"-linux${{ matrix.build_flags.postfix }}"
 
         if "run" in step:
+            if job_name == "alpine":
+                step["shell"] = "alpine.sh {0}"
             # tracy uses ${{ github.sha }} to pass git ref to cmake
             # luckily, cmake calls "git log <ref>" so we can just pass the tag
             if "${{ github.sha }}" in step["run"]:
