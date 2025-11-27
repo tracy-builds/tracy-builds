@@ -8,6 +8,7 @@ Subject: [PATCH] Fix usage of ftello64 on non-glibc Linux
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/update/src/update.cpp b/update/src/update.cpp
+index 988c7ae17e..d325b27b78 100644
 --- a/update/src/update.cpp
 +++ b/update/src/update.cpp
 @@ -20,0 +20,0 @@
