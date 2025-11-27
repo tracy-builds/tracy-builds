@@ -178,7 +178,7 @@ rm -rf tracy-builds
                     " -DCMAKE_BUILD_TYPE=Release",
                     " ${{ matrix.build_flags.cmake }} -DCMAKE_BUILD_TYPE=Release",
                 )
-                if job_name == "alpine" and "Csvexport" in step["name"]:
+                if job_name == "alpine" and ("Csvexport" in step["name"] or "Import" in step["name"]):
                     continue # borken, i dont care to fix
 
         # remove Test builds
@@ -210,11 +210,13 @@ rm -rf tracy-builds
 
     if job_name == "alpine":
         cmake = '-DTRACY_LTO=ON -DCMAKE_C_FLAGS="-static -Os"'
+        musl="-musl"
     else:
         cmake = '-DTRACY_LTO=ON'
+        musl=""
     
     job_config["strategy"]["matrix"]["build_flags"] = [
-        {"cmake": cmake, "meson": "", "postfix": ""},
+        {"cmake": cmake, "meson": "", "postfix": f"{musl}"},
     ]
 
     if job_name in ["linux", "alpine"]:
@@ -222,7 +224,7 @@ rm -rf tracy-builds
             {
                 "cmake": f"-DLEGACY=ON {cmake}",
                 "meson": "",
-                "postfix": "-x11",
+                "postfix": f"{musl}-x11",
             }
         )
 
