@@ -182,7 +182,13 @@ rm -rf tracy-builds
                 )
                 if job_name == "alpine" and ("Csvexport" in step["name"] or "Import" in step["name"]):
                     continue # borken, i dont care to fix
-
+            if "Artifacs" in step["name"]:
+                lines = []
+                for line in step["run"].splitlines():
+                    if "csvexport" in line or "tracy-import" in line:
+                        continue
+                    lines.append(line)
+                step["run"] = "\n".join(lines)
         # remove Test builds
         if (
             "name" in step
