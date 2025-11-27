@@ -13,7 +13,7 @@ create-release:
     run: ls -R artifacts/
   - name: Package all artifacts
     run: |-
-      STRIP_KEYWORDS=("latest" "15" "arch" "alpine")
+      STRIP_KEYWORDS=("latest" "15" "arch")
       cd artifacts
       for dir in */; do
         dirname="${dir%/}"
@@ -49,5 +49,5 @@ create-release:
       files: |-
         *.zip
         *.tar.gz
-      fail_on_unmatched_files: false
+      fail_on_unmatched_files: true
       overwrite: true
