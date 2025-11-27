@@ -121,6 +121,8 @@ def modify_job(job_config, tracy_tag, job_name):
                     {
                         "name": "apply patch",
                         "run": """set -e
+git config user.name github-actions[bot]
+git config user.email github-actions[bot]@users.noreply.github.com
 for patch in tracy-builds/patches/*.patch; do
     if [ -f "$patch" ]; then
         echo "Checking patch: $patch"
