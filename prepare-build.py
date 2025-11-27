@@ -217,20 +217,22 @@ rm -rf tracy-builds
     # },
 
     if job_name == "alpine":
-        cmake = '-DTRACY_LTO=ON -DCMAKE_C_FLAGS="-static -Os"'
+        if "env" not in job_config:
+            job_config["env"] = {}
+        job_config["env"]["CC"] = "gcc -static-libgcc -static-libstdc++ -static"
+        job_config["env"]["CXX"] = "gcc -static-libgcc -static-libstdc++ -static"
         musl="-musl"
     else:
-        cmake = '-DTRACY_LTO=ON'
         musl=""
     
     job_config["strategy"]["matrix"]["build_flags"] = [
-        {"cmake": cmake, "meson": "", "postfix": f"{musl}"},
+        {"cmake": "-DTRACY_LTO=ON", "meson": "", "postfix": f"{musl}"},
     ]
 
     if job_name in ["linux", "alpine"]:
         job_config["strategy"]["matrix"]["build_flags"].append(
             {
-                "cmake": f"-DLEGACY=ON {cmake}",
+                "cmake": f"-DLEGACY=ON -DTRACY_LTO=ON",
                 "meson": "",
                 "postfix": f"{musl}-x11",
             }
