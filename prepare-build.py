@@ -94,8 +94,8 @@ def modify_job(job_config, tracy_tag, file):
         job_config["container"] = "debian:oldoldstable"
         steps = [
             {
-                "name": "isntall packages",
-                "run": "apt-get update && apt-get instal -y games-c++-dev libglfw3-dev libxkbcommon-dev libxkbcommon-x11-dev libglvnd-dev dbus wayland-protocols waylandpp-dev libfreetype-dev cmake meson git nodejs"}
+                "name": "install packages",
+                "run": "apt-get update && apt-get install -y games-c++-dev libglfw3-dev libxkbcommon-dev libxkbcommon-x11-dev libglvnd-dev dbus wayland-protocols waylandpp-dev libfreetype-dev cmake meson git nodejs"}
         ]
     else:
         steps = []
