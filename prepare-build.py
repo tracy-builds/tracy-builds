@@ -215,8 +215,8 @@ def generate_combined_workflow(workflows, tracy_tag):
         if "jobs" in linux_wf:
             if False:
                 arch_wf = deepcopy(linux_wf)
-                job = f"tracy-linux-{job_name}"
                 for job_name, job_config in arch_wf["jobs"].items():
+                    job = f"tracy-linux-{job_name}"
                     print(f"  Adding job: {job}")
                     modify_job(job_config, tracy_tag, "linux.yml")
                     combined["jobs"][job] = job_config
@@ -226,8 +226,8 @@ def generate_combined_workflow(workflows, tracy_tag):
                         combined["jobs"][job]["env"].update(arch_wf["env"])
 
             legacy_wf = deepcopy(linux_wf)
-            job = f"tracy-linux-legacy-{job_name}"
             for job_name, job_config in legacy_wf["jobs"].items():
+                job = f"tracy-linux-legacy-{job_name}"
                 print(f"  Adding job: {job}")
                 modify_job(job_config, tracy_tag, "legacy.yml")
                 combined["jobs"][job] = job_config
