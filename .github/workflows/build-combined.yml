@@ -1,0 +1,116 @@
+name: Combined Tracy Build
+'on':
+  push:
+    tags:
+    - v*
+permissions:
+  contents: write
+jobs:
+  tracy-linux-legacy-build:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: install packages
+      run: sudo apt-get update && sudo apt-get install -y games-c++-dev libglfw3-dev
+        libxkbcommon-dev libxkbcommon-x11-dev libglvnd-dev dbus libfreetype-dev cmake
+        meson git nodejs
+    - name: Trust git repo
+      run: git config --global --add safe.directory '*'
+    - uses: actions/checkout@v4
+      with:
+        repository: wolfpld/tracy
+        ref: ${{ github.event.inputs.tracy_tag || 'v0.12.2' }}
+    - name: Profiler GUI
+      run: |
+        cmake -B profiler/build -S profiler ${{ matrix.build_flags.cmake }} -DCMAKE_BUILD_TYPE=Release -DGIT_REV="v0.12.2"
+        cmake --build profiler/build --parallel
+    - name: Update utility
+      run: |
+        cmake -B update/build -S update ${{ matrix.build_flags.cmake }} -DCMAKE_BUILD_TYPE=Release
+        cmake --build update/build --parallel
+    - name: Capture utility
+      run: |
+        cmake -B capture/build -S capture ${{ matrix.build_flags.cmake }} -DCMAKE_BUILD_TYPE=Release
+        cmake --build capture/build --parallel
+    - name: Csvexport utility
+      run: |
+        cmake -B csvexport/build -S csvexport ${{ matrix.build_flags.cmake }} -DCMAKE_BUILD_TYPE=Release
+        cmake --build csvexport/build --parallel
+    - name: Import utilities
+      run: |
+        cmake -B import/build -S import ${{ matrix.build_flags.cmake }} -DCMAKE_BUILD_TYPE=Release
+        cmake --build import/build --parallel
+    - name: Find Artifacts
+      id: find_artifacts
+      run: |
+        mkdir -p bin
+        cp profiler/build/tracy-profiler bin
+        cp update/build/tracy-update bin
+        cp capture/build/tracy-capture bin
+        cp csvexport/build/tracy-csvexport bin
+        cp import/build/tracy-import-chrome bin
+        cp import/build/tracy-import-fuchsia bin
+        strip bin/tracy-*
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ubuntu-linux${{ matrix.build_flags.postfix }}
+        path: bin
+    strategy:
+      matrix:
+        build_flags:
+        - cmake: -DLEGACY=ON -DTRACY_LTO=ON
+          meson: ''
+          postfix: -x11
+    env:
+      CPM_SOURCE_CACHE: ${{ github.workspace }}/cpm-cache
+  create-release:
+    needs:
+    - tracy-linux-legacy-build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+    - name: List downloaded artifacts
+      run: ls -R artifacts/
+    - name: Package all artifacts
+      run: |-
+        STRIP_KEYWORDS=("latest" "15" "arch" "legacy")
+        cd artifacts
+        for dir in */; do
+          dirname="${dir%/}"
+          echo "Processing: $dirname"
+
+          clean_name="$dirname"
+          for keyword in "${STRIP_KEYWORDS[@]}"; do
+            clean_name="${clean_name//$keyword/}"
+          done
+
+          clean_name=$(echo "$clean_name" | sed 's/--*/-/g; s/^-//; s/-$//')
+
+          case "$dirname" in
+            windows-*)
+              (cd "$dirname" && zip -r "../../tracy-${clean_name}.zip" ./* )
+              echo "Created tracy-${clean_name}.zip"
+              ;;
+            *)
+              tar czf "../tracy-${clean_name}.tar.gz" "$dirname"
+              echo "Created tracy-${clean_name}.tar.gz"
+              ;;
+          esac
+        done
+        cd ..
+    - name: List created packages
+      run: ls -lh *.zip *.tar.gz 2>/dev/null || echo "No packages created"
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        name: Tracy ${{ github.ref_name }}
+        target_commitish: ${{ github.sha }}
+        body: Prebuilt Tracy binaries for ${{ github.ref_name }} from https://github.com/wolfpld/tracy
+        files: |-
+          *.zip
+          *.tar.gz
+        fail_on_unmatched_files: false
