@@ -173,6 +173,8 @@ rm -rf tracy-builds
                 step["run"] = step["run"].replace(
                     "meson setup -D", "meson setup ${{ matrix.build_flags.meson }} -D"
                 )
+                if job_name == "alpine":
+                    continue
             if "cmake -B" in step["run"]:
                 step["run"] = step["run"].replace(
                     " -DCMAKE_BUILD_TYPE=Release",
