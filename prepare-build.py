@@ -111,6 +111,36 @@ def modify_job(job_config, tracy_tag, job_name):
                     "repository": "wolfpld/tracy",
                     "ref": f"${{{{ github.event.inputs.tracy_tag || '{tracy_tag}' }}}}",
                 }
+                steps.extend([
+                    step,
+                    {
+                        "name": "checkout main repo",
+                        "uses": "actions/checkout@v4",
+                        "with": {"path": "tracy-builds"}
+                    },
+                    {
+                        "name": "apply patch",
+                        "run": """set -e
+for patch in "tracy-builds/patches/*.patch; do
+    if [ -f "$patch" ]; then
+        echo "Checking patch: $patch"
+
+        git am --3way /path/to/patch.patch || {
+            git am --abort
+            echo "Patch $patch apply failed"
+        }
+
+    else
+        echo "No patch files found in tracy-builds/patches"
+    fi
+done
+rm -rf tracy-builds 
+"""
+                    }
+                ])
+
+
+                continue
 
             # add build flags matrix to upload
             if "actions/upload-artifact" in step["uses"]:
