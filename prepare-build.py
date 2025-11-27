@@ -127,7 +127,7 @@ for patch in tracy-builds/patches/*.patch; do
     if [ -f "$patch" ]; then
         echo "Checking patch: $patch"
 
-        git am --3way /path/to/patch.patch || {
+        git am --3way "$patch" || {
             git am --abort
             echo "Patch $patch apply failed"
         }
