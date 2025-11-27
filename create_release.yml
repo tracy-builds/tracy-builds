@@ -49,5 +49,4 @@ create-release:
       files: |-
         *.zip
         *.tar.gz
-      fail_on_unmatched_files: true
-      overwrite: true
+      fail_on_unmatched_files: false
