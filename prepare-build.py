@@ -90,14 +90,15 @@ def modify_job(job_config, tracy_tag, file):
     """Modify jobs."""
     if "steps" not in job_config:
         return
-    
+
     if file == "legacy.yml":
         del job_config["container"]
         job_config["runs-on"] = "ubuntu-22.04"
         steps = [
             {
                 "name": "install packages",
-                "run": "sudo apt-get update && sudo apt-get install -y games-c++-dev libglfw3-dev libxkbcommon-dev libxkbcommon-x11-dev libglvnd-dev dbus libfreetype-dev cmake meson git nodejs"}
+                "run": "sudo apt-get update && sudo apt-get install -y games-c++-dev libglfw3-dev libxkbcommon-dev libxkbcommon-x11-dev libglvnd-dev dbus libfreetype-dev cmake meson git nodejs",
+            }
         ]
     else:
         steps = []
@@ -119,7 +120,9 @@ def modify_job(job_config, tracy_tag, file):
                 elif file == "linux.yml":
                     step["with"]["name"] = "arch-linux${{ matrix.build_flags.postfix }}"
                 else:
-                    step["with"]["name"] = "ubuntu-linux${{ matrix.build_flags.postfix }}"
+                    step["with"]["name"] = (
+                        "ubuntu-linux${{ matrix.build_flags.postfix }}"
+                    )
 
         if "run" in step:
             # tracy uses ${{ github.sha }} to pass git ref to cmake
@@ -193,7 +196,7 @@ def generate_combined_workflow(workflows, tracy_tag):
     }
 
     # Process build.yml (Windows/macOS)
-    if "build.yml" in workflows and False:
+    if "build.yml" in workflows:
         print("Processing build.yml...")
         with open(workflows["build.yml"], "r") as f:
             build_wf = yaml.safe_load(f)
@@ -215,17 +218,16 @@ def generate_combined_workflow(workflows, tracy_tag):
             linux_wf = yaml.safe_load(f)
 
         if "jobs" in linux_wf:
-            if False:
-                arch_wf = deepcopy(linux_wf)
-                for job_name, job_config in arch_wf["jobs"].items():
-                    job = f"tracy-linux-{job_name}"
-                    print(f"  Adding job: {job}")
-                    modify_job(job_config, tracy_tag, "linux.yml")
-                    combined["jobs"][job] = job_config
-                    if "env" in arch_wf:
-                        if "env" not in combined["jobs"][job]:
-                            combined["jobs"][job]["env"] = {}
-                        combined["jobs"][job]["env"].update(arch_wf["env"])
+            arch_wf = deepcopy(linux_wf)
+            for job_name, job_config in arch_wf["jobs"].items():
+                job = f"tracy-linux-{job_name}"
+                print(f"  Adding job: {job}")
+                modify_job(job_config, tracy_tag, "linux.yml")
+                combined["jobs"][job] = job_config
+                if "env" in arch_wf:
+                    if "env" not in combined["jobs"][job]:
+                        combined["jobs"][job]["env"] = {}
+                    combined["jobs"][job]["env"].update(arch_wf["env"])
 
             legacy_wf = deepcopy(linux_wf)
             for job_name, job_config in legacy_wf["jobs"].items():
@@ -237,7 +239,6 @@ def generate_combined_workflow(workflows, tracy_tag):
                     if "env" not in combined["jobs"][job]:
                         combined["jobs"][job]["env"] = {}
                     combined["jobs"][job]["env"].update(legacy_wf["env"])
-
 
     # Add release job
     print("Adding release job...")
