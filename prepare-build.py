@@ -192,6 +192,7 @@ def generate_combined_workflow(workflows, tracy_tag):
         "name": "Combined Tracy Build",
         "on": {"push": {"tags": ["v*"]}},
         "permissions": {"contents": "write"},
+        "env": {"CMAKE_BUILD_PARALLEL_LEVEL": 3},
         "jobs": {},
     }
 
