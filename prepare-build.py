@@ -139,14 +139,16 @@ def modify_job(job_config, tracy_tag, file):
             if "meson" in step["run"]:
                 if file == "legacy.yml":
                     continue
-                step["run"] = "nice " + step["run"].replace(
+                step["run"] = step["run"].replace(
                     "meson setup -D", "meson setup ${{ matrix.build_flags.meson }} -D"
                 )
             if "cmake -B" in step["run"]:
-                step["run"] = "nice " + step["run"].replace(
+                step["run"] = step["run"].replace(
                     " -DCMAKE_BUILD_TYPE=Release",
                     " ${{ matrix.build_flags.cmake }} -DCMAKE_BUILD_TYPE=Release",
                 )
+                if file == "linux.yml":
+                    step["run"] = "nice " + step["run"]
 
         # remove Test builds
         if (
