@@ -1,6 +1,7 @@
 create-release:
   needs:
   - placeholder
+  if: always()
   runs-on: ubuntu-latest
   permissions:
     contents: write
