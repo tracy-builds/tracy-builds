@@ -148,7 +148,7 @@ def modify_job(job_config, tracy_tag, file):
                     " ${{ matrix.build_flags.cmake }} -DCMAKE_BUILD_TYPE=Release",
                 )
             if step["run"].startswith("cmake") and file == "linux.yml":
-                step["run"] = "VERBOSE=1 nice " + step["run"]
+                step["run"] = "\n".join("VERBOSE=1 nice " + cmd for cmd in step["run"].splitlines())
 
         # remove Test builds
         if (
