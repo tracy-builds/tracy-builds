@@ -97,7 +97,7 @@ def modify_job(job_config, tracy_tag, file):
         steps = [
             {
                 "name": "install packages",
-                "run": "sudo apt-get update && sudo apt-get install -y games-c++-dev libglfw3-dev libxkbcommon-dev libxkbcommon-x11-dev libglvnd-dev dbus libfreetype-dev cmake meson git nodejs",
+                "run": "sudo apt-get update && sudo apt-get install -y games-c++-dev libglfw3-dev libxkbcommon-dev libxkbcommon-x11-dev libglvnd-dev dbus libfreetype-dev cmake meson git nodejs mold",
             }
         ]
     else:
@@ -131,9 +131,7 @@ def modify_job(job_config, tracy_tag, file):
                 step["run"] = step["run"].replace("${{ github.sha }}", f'"{tracy_tag}"')
 
             if "pacman" in step["run"]:
-                if file == "legacy.yml":
-                    # step["run"] = step["run"].replace("cmake", "cmake glfw")
-                    continue
+                step["run"] = step["run"].replace("cmake", "cmake mold")
 
             # inject matrix args into meson and cmake
             if "meson" in step["run"]:
