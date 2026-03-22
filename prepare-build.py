@@ -163,6 +163,8 @@ def modify_job(job_config, tracy_tag, file):
     # use new, cleaned, steps
     job_config["steps"] = steps
 
+    job_config["continue-on-error"] = True
+
     # add build_flags matrix
     if "strategy" not in job_config:
         job_config["strategy"] = {}
