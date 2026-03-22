@@ -147,8 +147,8 @@ def modify_job(job_config, tracy_tag, file):
                     " -DCMAKE_BUILD_TYPE=Release",
                     " ${{ matrix.build_flags.cmake }} -DCMAKE_BUILD_TYPE=Release",
                 )
-                if file == "linux.yml":
-                    step["run"] = "nice " + step["run"]
+            if step["run"].startswith("cmake") and file == "linux.yml":
+                step["run"] = "nice " + step["run"]
 
         # remove Test builds
         if (
@@ -173,8 +173,10 @@ def modify_job(job_config, tracy_tag, file):
     job_config["strategy"]["matrix"]["build_flags"] = [
         {"cmake": "-DTRACY_LTO=ON", "meson": "", "postfix": ""},
     ]
-    if file == "legacy.yml":
-        job_config["strategy"]["matrix"]["build_flags"] = []
+    if file == "linux.yml": 
+        job_config["strategy"]["matrix"]["build_flags"].append(
+            {"cmake": "", "meson": "", "postfix": ""}
+        )
 
     if file == "legacy.yml":
         job_config["strategy"]["matrix"]["build_flags"].append(
